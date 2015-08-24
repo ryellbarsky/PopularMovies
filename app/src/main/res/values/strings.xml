@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="properties_file">project1.properties</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="movie_detail_title">Movie Details</string>
+
+    <string name="title_activity_settings">Settings</string>
+    <string name="pref_sort_order_label">Sort Order</string>
+    <string name="pref_sort_order_key">sortOrder</string>
+    <string name="pref_sort_order_popular">Popularity</string>
+    <string name="pref_sort_order_rating">Rating</string>
+    <string name="pref_sort_order_default">Popularity</string>
+    <string-array name="pref_sort_order_options">
+        <item>Popularity</item>
+        <item>Rating</item>
+    </string-array>
+    <string-array name="pref_sort_order_values">
+        <item>Popularity</item>
+        <item>Rating</item>
+    </string-array>
+    <string name="sort_order_param_popularity">popularity.desc</string>
+    <string name="sort_order_param_rating">vote_average.desc</string>
+
+</resources>
