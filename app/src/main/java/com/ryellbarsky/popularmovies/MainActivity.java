@@ -6,6 +6,7 @@ import android.content.res.AssetManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -25,25 +26,38 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Properties;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-    private String API_URL = "http://api.themoviedb.org/3/discover/movie";
-    private String POSTER_URL = "http://image.tmdb.org/t/p/w185/";
-    private String BACKDROP_URL = "http://image.tmdb.org/t/p/w780/";
+
     private String PARCELABLE_MOVIE_ITEM_EXTRA = "parselableMovieItem";
     private MovieGridViewAdapter moviesAdapter;
     private ArrayList<MovieItem> movies;
     private String API_KEY;
+    private String MOVIE_ARRAY_KEY = "parcelableMovieArray";
+    private boolean getFreshData = true;
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(MOVIE_ARRAY_KEY, (ArrayList<? extends Parcelable>) movies);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null) {
+            movies = (ArrayList<MovieItem>) savedInstanceState.get(MOVIE_ARRAY_KEY);
+            getFreshData = false;
+        } else {
+            movies = new ArrayList<>();
+        }
+
         Properties properties = new Properties();
 
         try {
@@ -55,10 +69,7 @@ public class MainActivity extends AppCompatActivity {
         }
         API_KEY = properties.getProperty("API_KEY");
 
-        setContentView(R.layout.activity_main);
-
         final GridView movieGridView = (GridView) findViewById(R.id.movie_grid_view);
-        movies = new ArrayList<>();
         moviesAdapter = new MovieGridViewAdapter(this, R.layout.movie_grid_item, movies);
         movieGridView.setAdapter(moviesAdapter);
 
@@ -76,10 +87,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        movies.clear();
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
-        String sortOrder = settings.getString(getString(R.string.pref_sort_order_key), getString(R.string.pref_sort_order_default));
-        new FetchMoviesTask().execute(sortOrder);
+        if (getFreshData) {
+            SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+            String sortOrder = settings.getString(getString(R.string.pref_sort_order_key), getString(R.string.pref_sort_order_default));
+            new FetchMoviesTask().execute(sortOrder);
+        }
+        getFreshData = true;
     }
 
     @Override
@@ -103,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
     public class FetchMoviesTask extends AsyncTask<String, Void, Integer> {
         private final String LOG_TAG = FetchMoviesTask.class.getSimpleName();
+        private final String API_URL = "http://api.themoviedb.org/3/discover/movie";
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -140,9 +154,6 @@ public class MainActivity extends AppCompatActivity {
 
                 movieJson = buffer.toString();
 
-            } catch (MalformedURLException e) {
-                Log.e(LOG_TAG, "The URL to receive movie data was not properly formed", e);
-                return 0;
             } catch (IOException e) {
                 Log.e(LOG_TAG, "There was an error reading movie data from the input stream", e);
                 return 0;
@@ -180,12 +191,14 @@ public class MainActivity extends AppCompatActivity {
 
         /**
          * This method parses the JSON returned from the API and populates the ArrayList of MovieItems
+         *
          * @param movieJsonStr the JSON result from the API
          * @throws JSONException
          */
         private void populateMovieItemsArrayList(String movieJsonStr)
                 throws JSONException {
 
+            movies.clear();
             final String MOVIE_ID = "id";
             final String POSTER_PATH = "poster_path";
             final String TITLE = "original_title";
@@ -193,6 +206,8 @@ public class MainActivity extends AppCompatActivity {
             final String MOVIE_RELEASE_DATE = "release_date";
             final String MOVIE_RATING = "vote_average";
             final String MOVIE_SYNOPSIS = "overview";
+            final String POSTER_URL = "http://image.tmdb.org/t/p/w185/";
+            final String BACKDROP_URL = "http://image.tmdb.org/t/p/w780/";
 
             JSONObject movieJson = new JSONObject(movieJsonStr);
             JSONArray movieArray = movieJson.getJSONArray("results");

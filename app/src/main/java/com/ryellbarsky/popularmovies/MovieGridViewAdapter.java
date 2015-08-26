@@ -56,7 +56,11 @@ public class MovieGridViewAdapter extends ArrayAdapter<MovieItem>{
 
         MovieItem item = mMovieItems.get(position);
 
-        Picasso.with(mContext).load(item.getMoviePosterImageUrl()).into(movieViewHolder.moviePosterImageView);
+        Picasso.with(mContext)
+                .load(item.getMoviePosterImageUrl())
+                .placeholder(R.drawable.loading_image)
+                .error(R.drawable.image_error)
+                .into(movieViewHolder.moviePosterImageView);
         movieViewHolder.movieTitleTextView.setText(item.getMovieTitle());
 
         return movieView;
